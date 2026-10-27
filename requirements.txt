@@ -1,0 +1,6 @@
+Flask>=3.0,<4
+openai>=1.66.0
+python-dotenv>=1.0
+pytest>=8.0
+# Planned for the document Q&A milestone (not used yet):
+# PyMuPDF

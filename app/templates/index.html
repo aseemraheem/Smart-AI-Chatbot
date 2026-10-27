@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="max-message-chars" content="{{ max_chars }}">
+  <title>Smart AI Chatbot</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Conversations">
+      <div class="brand">
+        <img class="brand__logo" src="{{ url_for('static', filename='images/logo.svg') }}" alt="" width="32" height="32">
+        <span class="brand__name">Smart AI</span>
+      </div>
+
+      <button class="btn btn--primary btn--block" id="newChatBtn" type="button">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        New chat
+      </button>
+
+      <div class="search">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>
+        <input id="searchInput" type="search" placeholder="Search conversations" aria-label="Search conversations" autocomplete="off" maxlength="100">
+      </div>
+
+      <nav class="convos" aria-label="Recent conversations">
+        <ul id="conversationList" class="convos__list"></ul>
+        <p class="convos__empty" id="listEmpty" hidden></p>
+      </nav>
+
+      <div class="sidebar__footer">
+        <button class="btn btn--ghost" id="settingsBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>
+          Settings
+        </button>
+        <button class="btn btn--ghost btn--icon" id="themeBtn" type="button" aria-label="Switch to light theme" title="Toggle theme">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>
+        </button>
+        <span class="version">v{{ version }}</span>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="btn btn--ghost btn--icon menu-btn" id="menuBtn" type="button" aria-label="Open conversations" aria-controls="sidebar" aria-expanded="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <h1 class="topbar__title" id="chatTitle">New chat</h1>
+        <span class="chip" id="modelChip" hidden></span>
+      </header>
+
+      <div class="scroll" id="scroll">
+        <div class="thread" id="thread">
+          <section class="welcome" id="welcome">
+            <img class="welcome__logo" src="{{ url_for('static', filename='images/logo.svg') }}" alt="" width="56" height="56">
+            <h2 class="welcome__title">What can I help you with?</h2>
+            <p class="welcome__intro">Smart AI answers questions, explains code, drafts and edits text, and helps you plan your work. Pick a starter or write your own message.</p>
+            <p class="notice notice--warn" id="configNotice" hidden>The AI is not configured yet. Add <code>OPENAI_API_KEY</code> and <code>OPENAI_MODEL</code> to your <code>.env</code> file and restart the app. You can still browse the interface.</p>
+            <div class="starters">
+              <button class="starter" type="button" data-prompt="Explain the difference between a list and a tuple in Python, with a short example of when to use each.">
+                <span class="starter__label">Coding</span>
+                <span class="starter__text">Explain lists vs tuples in Python</span>
+              </button>
+              <button class="starter" type="button" data-prompt="Teach me how HTTPS keeps my data safe. Start simple, then go one level deeper.">
+                <span class="starter__label">Learning</span>
+                <span class="starter__text">How does HTTPS keep data safe?</span>
+              </button>
+              <button class="starter" type="button" data-prompt="Help me write a short, confident introduction for the About section of my GitHub profile. I'm a computer science student.">
+                <span class="starter__label">Writing</span>
+                <span class="starter__text">Draft my GitHub profile intro</span>
+              </button>
+              <button class="starter" type="button" data-prompt="I have an exam in two weeks and three assignments due. Help me make a realistic weekly study plan.">
+                <span class="starter__label">Productivity</span>
+                <span class="starter__text">Plan two weeks of study</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="composer-wrap">
+        <div class="banner" id="errorBanner" role="alert" hidden>
+          <span id="errorText"></span>
+          <button class="btn btn--small" id="retryBtn" type="button" hidden>Try again</button>
+          <button class="btn btn--ghost btn--icon btn--small" id="dismissErrorBtn" type="button" aria-label="Dismiss error">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <form class="composer" id="composerForm" autocomplete="off">
+          <label class="sr-only" for="messageInput">Message Smart AI</label>
+          <textarea id="messageInput" rows="1" maxlength="{{ max_chars }}" placeholder="Message Smart AI…  (Enter to send, Shift+Enter for a new line)"></textarea>
+          <div class="composer__row">
+            <span class="counter" id="counter" aria-live="off">0 / {{ max_chars }}</span>
+            <button class="btn btn--stop" id="stopBtn" type="button" hidden>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+              Stop
+            </button>
+            <button class="btn btn--send" id="sendBtn" type="submit" aria-label="Send message" disabled>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
+        </form>
+        <p class="disclaimer">AI responses can contain mistakes. Check important information.</p>
+      </div>
+    </main>
+  </div>
+
+  <div class="sr-only" id="liveStatus" role="status" aria-live="polite"></div>
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <dialog class="dialog" id="settingsDialog" aria-labelledby="settingsTitle">
+    <h2 id="settingsTitle">Settings</h2>
+    <div class="field">
+      <label for="themeSelect">Theme</label>
+      <select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select>
+    </div>
+    <div class="field">
+      <label for="styleSelect">Response style</label>
+      <select id="styleSelect"><option value="concise">Concise</option><option value="balanced">Balanced</option><option value="detailed">Detailed</option></select>
+    </div>
+    <p class="dialog__info" id="aiInfo"></p>
+    <p class="dialog__info">Conversations are stored in a local database on this computer. Do not paste passwords or other sensitive information.</p>
+    <div class="dialog__actions"><button class="btn btn--primary" type="button" data-close>Done</button></div>
+  </dialog>
+
+  <dialog class="dialog" id="renameDialog" aria-labelledby="renameTitle">
+    <form id="renameForm">
+      <h2 id="renameTitle">Rename conversation</h2>
+      <div class="field">
+        <label for="renameInput">Title</label>
+        <input id="renameInput" type="text" maxlength="80" required>
+      </div>
+      <div class="dialog__actions">
+        <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+        <button class="btn btn--primary" type="submit">Save name</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="deleteDialog" aria-labelledby="deleteTitle">
+    <h2 id="deleteTitle">Delete conversation?</h2>
+    <p class="dialog__info" id="deleteText"></p>
+    <div class="dialog__actions">
+      <button class="btn btn--ghost" type="button" data-close>Cancel</button>
+      <button class="btn btn--danger" type="button" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </dialog>
+
+  <script src="{{ url_for('static', filename='vendor/marked.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/purify.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/highlight.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+</body>
+</html>

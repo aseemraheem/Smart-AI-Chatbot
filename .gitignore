@@ -1,0 +1,29 @@
+# Secrets
+.env
+.env.*
+!.env.example
+instance/*
+!instance/.gitkeep
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database files
+*.db
+*.db-journal
+*.sqlite3
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Future document uploads
+uploads/
